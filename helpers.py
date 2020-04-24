@@ -2,6 +2,9 @@ import cv2
 import numpy as np
 import os
 import csv
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 
 def load_image(image):
@@ -13,7 +16,7 @@ def load_image(image):
     return img
 
 
-def get_vectors(folder_path, interpreter):
+def get_vectors(folder_path, label, interpreter):
     """"""
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()  # the input shape
@@ -32,7 +35,7 @@ def get_vectors(folder_path, interpreter):
         offsets = output_offset[0]
 
         con, kp = get_keypoints(heatmap, offsets)
-        data = np.append(kp.reshape(1,34), 1)
+        data = np.append(kp.reshape(1,34), label)
         # Write the keypoint in CSV file
         with open('poses.csv', mode='a') as pose_file:
             employee_writer = csv.writer(pose_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -66,3 +69,33 @@ def get_keypoints(heatmap, offsets):
 def sigmoid(a):
   """sigmoid function"""
   return 1/(1 + np.exp(-a))
+
+# Build new Network
+class MyNetwork(nn.Module):
+    def __init__(self):
+        super(MyNetwork, self).__init__()
+        self.l1 = nn.Linear(34, 20)
+        self.l2 = nn.Linear(20, 10)
+        self.l3 = nn.Linear(10, 3)
+        self.sig = nn.Sigmoid()
+        self.tan = nn.Tanh()
+        self.soft = nn.Softmax()
+
+    def forward(self, x):
+        x = self.sig(self.l1(x))
+        x = self.sig(self.l2(x))
+        x = self.sig(self.l3(x))
+        return x
+
+def train(net, data_set):
+    criterion = nn.CrossEntropyLoss()   # cross entropy
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)     # optimizer
+    vector, label = data_set[:, :-1], data_set[:, -1]
+    for i in range(data_set.shape[0]):
+        inputs, labels = torch.Tensor(vector[i].reshape(1,34)), torch.tensor([np.long(label[i])])
+        optimizer.zero_grad()
+        outputs = net(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        return
