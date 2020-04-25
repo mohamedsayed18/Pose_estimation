@@ -1,13 +1,6 @@
-import numpy as np
-from numpy import loadtxt
-
 import tensorflow as tf
-import cv2
-import os
-
-
+from numpy import loadtxt
 from helpers import *
-
 
 model = tf.lite.Interpreter("posenet.tflite")   # load the model
 
@@ -19,6 +12,13 @@ get_vectors('Data_set/X_pose', 2, model)
 # feed vectors to the classifier
 mynet = MyNetwork()     # create model
 data = loadtxt('poses.csv', delimiter=',', dtype=np.float)      # data
+train(mynet, 5, data)  # train the
 
-train(mynet, data)  # train the
+# save
+torch.save(mynet.state_dict(), "./torch_model_v1.pt")
 
+# load
+model = MyNetwork() # the model should be defined with the same code you used to create the trained model
+state_dict = torch.load("./torch_model_v1.pt")
+model.load_state_dict(state_dict)
+model.eval()

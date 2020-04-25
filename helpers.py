@@ -41,6 +41,7 @@ def get_vectors(folder_path, label, interpreter):
             employee_writer = csv.writer(pose_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             employee_writer.writerow(data)
 
+
 def get_keypoints(heatmap, offsets):
   """
   Get the keypoint output
@@ -70,6 +71,7 @@ def sigmoid(a):
   """sigmoid function"""
   return 1/(1 + np.exp(-a))
 
+
 # Build new Network
 class MyNetwork(nn.Module):
     def __init__(self):
@@ -78,8 +80,6 @@ class MyNetwork(nn.Module):
         self.l2 = nn.Linear(20, 10)
         self.l3 = nn.Linear(10, 3)
         self.sig = nn.Sigmoid()
-        self.tan = nn.Tanh()
-        self.soft = nn.Softmax()
 
     def forward(self, x):
         x = self.sig(self.l1(x))
@@ -87,15 +87,19 @@ class MyNetwork(nn.Module):
         x = self.sig(self.l3(x))
         return x
 
-def train(net, data_set):
+
+def train(net, epochs, data_set):
     criterion = nn.CrossEntropyLoss()   # cross entropy
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)     # optimizer
+    optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9)     # optimizer
     vector, label = data_set[:, :-1], data_set[:, -1]
-    for i in range(data_set.shape[0]):
-        inputs, labels = torch.Tensor(vector[i].reshape(1,34)), torch.tensor([np.long(label[i])])
-        optimizer.zero_grad()
-        outputs = net(inputs)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-        return
+    for i in range(epochs):
+        running_loss = 0
+        for i in range(data_set.shape[0]):
+            inputs, labels = torch.Tensor(vector[i].reshape(1,34)), torch.tensor([np.long(label[i])])
+            optimizer.zero_grad()
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss
+        print("Epoch Loss",running_loss)
