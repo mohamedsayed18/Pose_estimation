@@ -1,6 +1,6 @@
 # Pose_estimation
 A computer vision project to do pose estimation using Deep learning models<br/>
-[Full report](https://docs.google.com/document/d/1igWosVILnYq6iJ-QHuaPX8kBmgtc6xAx5LnDDNz-H3s/edit?usp=sharing)<br/>
+[Full report](https://docs.google.com/document/d/1igWosVILnYq6iJ-QHuaPX8kBmgtc6xAx5LnDDNz-H3s/edit?usp=sharing)<br/>t
 [Presentation video](https://www.youtube.com/watch?v=mgX4lvBak_E)<br/>
 
 ### Repo content
