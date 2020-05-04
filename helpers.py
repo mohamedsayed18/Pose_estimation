@@ -5,6 +5,7 @@ import csv
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import tensorflow as tf
 
 
 def load_image(image):
@@ -68,8 +69,8 @@ def get_keypoints(heatmap, offsets):
 
 
 def sigmoid(a):
-  """sigmoid function"""
-  return 1/(1 + np.exp(-a))
+    """sigmoid function"""
+    return 1/(1 + np.exp(-a))
 
 
 # Build new Network
@@ -101,5 +102,35 @@ def train(net, epochs, data_set):
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-            running_loss += loss
+            running_loss += loss.item()
         print("Epoch Loss",running_loss)
+
+
+def test(net, image):
+    """Infer the given image"""
+    # Load the pose estimation
+    model = tf.lite.Interpreter("posenet.tflite")
+    model.allocate_tensors()
+    input_details = model.get_input_details()  # the input shape
+    output_details = model.get_output_details()  # the output shape
+
+    image = load_image(image)   # Load the image
+
+    # Feed image to the model
+    model.set_tensor(input_details[0]['index'], image)  # feed the image to model
+    model.invoke()
+    output_data = model.get_tensor(output_details[0]['index'])  # the heatmap output
+    output_offset = model.get_tensor(output_details[1]['index'])  # the offset output
+    heatmap = output_data[0]
+    offsets = output_offset[0]
+    con, kp = get_keypoints(heatmap, offsets)
+    inputs = torch.Tensor(kp.reshape(1, 34))
+    output = net(inputs)
+    index = output.data.cpu().numpy().argmax()
+    if index == 0:
+        return ('Prayer_pose')
+    elif index ==1:
+        return ('straw_pose')
+    else:
+        return ('X_pose')
+
